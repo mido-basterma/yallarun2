@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Yalla Run — منصة أسعار التوصيل</title>
+
+  <!-- PWA & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#EA580C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icon-512.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK (Compat Version for Vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface-subtle: #F1F5F9;
+      --ink: #0F172A;
+      --ink-secondary: #334155;
+      --muted: #64748B;
+      --line: #E2E8F0;
+      --line-light: #F1F5F9;
+
+      --primary: #EA580C;
+      --primary-hover: #C2410C;
+      --primary-soft: #FFF7ED;
+      --primary-border: #FED7AA;
+
+      --emerald: #059669;
+      --emerald-soft: #ECFDF5;
+      --emerald-border: #A7F3D0;
+
+      --warn: #B45309;
+      --warn-bg: #FFFBEB;
+      --warn-border: #FDE68A;
+
+      --danger: #DC2626;
+      --danger-soft: #FEF2F2;
+      --danger-border: #FECACA;
+
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+      --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 4px 10px -4px rgba(15, 23, 42, 0.03);
+      --shadow-lg: 0 20px 35px -8px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.06);
+
+      --font-display: 'Cairo', sans-serif;
+      --font-body: 'Tajawal', sans-serif;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    button {
+      font-family: var(--font-body);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      background: none;
+      color: inherit;
+    }
+
+    input, select {
+      font-family: var(--font-body);
+      color: var(--ink);
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .app-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+    }
+
+    /* --- Top Navbar --- */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 6px 14px -3px rgba(234, 88, 12, 0.35);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .rate-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 7px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .rate-pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      flex-shrink: 0;
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 40px;
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--ink-secondary);
+      box-shadow: var(--shadow-xs);
+      transition: var(--transition);
+    }
+
+    .nav-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .nav-btn-danger {
+      color: var(--danger);
+      border-color: var(--danger-border);
+      background: var(--danger-soft);
+    }
+
+    .nav-btn-danger:hover {
+      background: var(--danger);
+      color: #FFFFFF;
+      border-color: var(--danger);
+    }
+
+    @media (max-width: 520px) {
+      .rate-pill {
+        display: none;
+      }
+      .brand-name {
+        font-size: 19px;
+      }
+    }
+
+    /* --- Offline Banner --- */
+    .offline-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: var(--warn);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    /* --- Welcome Hero --- */
+    .hero-banner {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .hero-content h1 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .hero-content p {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .hero-stat-pill {
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      color: var(--primary);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+      .hero-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 18px;
+      }
+      .hero-content h1 {
+        font-size: 19px;
+      }
+      .hero-meta {
+        width: 100%;
+      }
+      .hero-stat-pill {
+        width: 100%;
+      }
+    }
+
+    /* --- Sticky Search & Category Nav --- */
+    .sticky-controls {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(248, 250, 252, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 10px 0 12px;
+      margin-bottom: 10px;
+    }
+
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      margin-bottom: 12px;
+    }
+
+    .search-wrapper:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.12);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 16px;
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+    }
+
+    .search-wrapper input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 14px 46px 14px 48px;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+      min-height: 50px;
+    }
+
+    .search-wrapper input::placeholder {
+      color: #94A3B8;
+      font-weight: 500;
+    }
+
+    .clear-search-btn {
+      position: absolute;
+      left: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      background: var(--surface-subtle);
+      transition: var(--transition);
+    }
+
+    .clear-search-btn:hover {
+      background: var(--line);
+      color: var(--ink);
+    }
+
+    /* Category Tabs */
+    .cat-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 4px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .cat-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-chip {
+      flex: none;
+      min-height: 38px;
+      padding: 7px 16px;
+      border-radius: var(--radius-full);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      transition: var(--transition);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .cat-chip:hover {
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+
+    .cat-chip.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px -2px rgba(234, 88, 12, 0.3);
+    }
+
+    /* --- Section & Pricing Cards --- */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      overflow: hidden;
+      scroll-margin-top: 132px;
+      transition: var(--transition);
+    }
+
+    .section-header {
+      padding: 16px 20px;
+      background: #FCFDFE;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-accent {
+      width: 4px;
+      height: 20px;
+      border-radius: var(--radius-full);
+      background: var(--primary);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .count-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      background: var(--surface-subtle);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .tier-row {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line-light);
+    }
+
+    .tier-row:last-child {
+      border-bottom: none;
+    }
+
+    .tier-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .price-pair {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .price-lbp {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -0.3px;
+    }
+
+    .price-usd {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--emerald);
+      background: var(--emerald-soft);
+      border: 1px solid var(--emerald-border);
+      padding: 3px 11px;
+      border-radius: var(--radius-sm);
+    }
+
+    .tier-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .areas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .areas-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .tier-row {
+        padding: 16px;
+      }
+      .section-header {
+        padding: 14px 16px;
+      }
+    }
+
+    .area-chip {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 11px 13px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      transition: var(--transition);
+    }
+
+    .area-chip:hover {
+      border-color: #CBD5E1;
+      background: var(--surface);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .area-chip.late-stop {
+      background: var(--warn-bg);
+      border-color: var(--warn-border);
+      color: #78350F;
+    }
+
+    .area-chip.late-stop:hover {
+      border-color: #F59E0B;
+      background: #FEF3C7;
+    }
+
+    .late-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--warn);
+    }
+
+    /* --- Skeleton Loading --- */
+    .skeleton-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .sk-line {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    .sk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .sk-box {
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* --- Empty State --- */
+    .empty-state {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 48px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .empty-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .empty-state h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .empty-state p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* --- Buttons & Inputs --- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 46px;
+      padding: 11px 20px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 700;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px -2px rgba(234, 88, 12, 0.28);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: var(--surface);
+      border: 1.5px solid var(--line);
+      color: var(--ink-secondary);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--ink-secondary);
+      background: var(--bg);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #FFFFFF;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #B91C1C;
+    }
+
+    .btn-danger-soft {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+
+    .btn-danger-soft:hover:not(:disabled) {
+      background: var(--danger);
+      color: #FFFFFF;
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 6px 14px;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #FFFFFF;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* --- Auth View --- */
+    .auth-card {
+      max-width: 430px;
+      margin: 28px auto 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 32px 26px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .auth-header h2 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .auth-header p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      text-align: right;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      margin-bottom: 7px;
+    }
+
+    .input-control {
+      width: 100%;
+      min-height: 46px;
+      padding: 11px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      background: var(--surface);
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .input-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 44px;
+    }
+
+    .toggle-pw-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      border-radius: var(--radius-sm);
+    }
+
+    .toggle-pw-btn:hover {
+      color: var(--ink);
+      background: var(--surface-subtle);
+    }
+
+    .form-note {
+      font-size: 12px;
+      color: var(--warn);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .inline-msg {
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .inline-msg.error {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+
+    .inline-msg.success {
+      background: var(--emerald-soft);
+      color: var(--emerald);
+      border: 1px solid var(--emerald-border);
+    }
+
+    /* --- Admin Dashboard --- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .kpi-value.accent {
+      color: var(--primary);
+    }
+
+    .admin-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .admin-tools-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .admin-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .admin-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .admin-card h3 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .flex-action-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    @media (max-width: 520px) {
+      .flex-action-row {
+        flex-direction: column;
+      }
+    }
+
+    /* Admin Table Card */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .table-toolbar h2 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .table-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 20px;
+      background: #FCFDFE;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .table-filters input {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .table-filters select {
+      min-width: 160px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line-light);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .data-table th {
+      background: #F8FAFC;
+      font-weight: 800;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .data-table tbody tr:hover {
+      background: #F8FAFC;
+    }
+
+    .data-table input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .td-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-pill {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      background: var(--surface-subtle);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    /* Mobile Responsive Table -> Cards */
+    @media (max-width: 640px) {
+      .table-toolbar {
+        padding: 16px;
+      }
+      .table-filters {
+        padding: 12px 16px;
+      }
+      .table-filters select {
+        width: 100%;
+      }
+      .data-table thead {
+        display: none;
+      }
+      .data-table,
+      .data-table tbody,
+      .data-table tr,
+      .data-table td {
+        display: block;
+        width: 100%;
+      }
+      .data-table tr {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        position: relative;
+      }
+      .data-table td {
+        padding: 4px 0;
+        border: none;
+      }
+      .data-table td.col-check {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        width: auto;
+      }
+      .data-table td.col-name {
+        padding-left: 34px;
+        font-size: 16px;
+      }
+      .data-table td.col-actions {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--line);
+      }
+      .td-actions .btn {
+        flex: 1;
+      }
+    }
+
+    /* --- Floating Bulk Action Bar --- */
+    .action-bar {
+      position: fixed;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: var(--shadow-lg);
+      z-index: 90;
+      width: calc(100% - 32px);
+      max-width: 440px;
+    }
+
+    /* --- Modals --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      animation: fadeIn 0.16s ease-out;
+    }
+
+    .modal {
+      background: var(--surface);
+      width: 100%;
+      max-width: 440px;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      animation: slideUp 0.18s ease-out;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .modal-header h2 {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .modal-close {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      background: var(--surface-subtle);
+    }
+
+    .modal-close:hover {
+      background: var(--line);
+      color: var(--ink);
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .checkbox-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    .checkbox-row span {
+      font-size: 14px;
+      font-weight: 700;
+      color: #78350F;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    /* --- Toast Notifications --- */
+    .toast-container {
+      position: fixed;
+      top: calc(16px + env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: calc(100% - 32px);
+      max-width: 400px;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      padding: 13px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--ink);
+      color: #FFFFFF;
+      animation: slideDown 0.2s ease-out;
+    }
+
+    .toast.success {
+      background: #065F46;
+      color: #ECFDF5;
+    }
+
+    .toast.error {
+      background: #991B1B;
+      color: #FEF2F2;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Main View -->
+  <div id="view-main" class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">
+            Yalla Run
+            <span class="brand-tag">توصيل 24/7</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="rate-pill" id="header-rate-pill" title="سعر الصرف المعتمد">
+          <span class="rate-pill-dot"></span>
+          <span id="header-rate-text">1$ = 89,500 ل.ل</span>
+        </div>
+        <a href="#admin" class="nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          الإدارة
+        </a>
+      </div>
+    </header>
+
+    <div id="offline-banner" class="offline-banner hidden">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+        <line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+      <span>لا يوجد اتصال بالإنترنت — يتم عرض آخر نسخة محفوظة محلياً</span>
+    </div>
+
+    <section class="hero-banner">
+      <div class="hero-content">
+        <h1>تعرفة التوصيل حسب المناطق اللبنانية</h1>
+        <p>ابحث عن أي منطقة لمعرفة كلفة التوصيل بالليرة اللبنانية والدولار الأميركي فوراً.</p>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-stat-pill" id="hero-total-areas">جاري التحميل...</div>
+      </div>
+    </section>
+
+    <div class="sticky-controls">
+      <div class="search-wrapper">
+        <span class="search-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input type="search" id="searchInput" placeholder="ابحث عن منطقة، مثلاً: بيروت، جونيه، الحمرا..." autocomplete="off" aria-label="البحث عن منطقة">
+        <button type="button" id="clearSearchBtn" class="clear-search-btn hidden" aria-label="مسح البحث" title="مسح البحث">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <nav class="cat-nav" id="catNav" aria-label="تصنيفات المناطق"></nav>
+    </div>
+
+    <!-- Skeleton Loading State -->
+    <div id="loading-main">
+      <div class="skeleton-card">
+        <div class="sk-line" style="width: 35%;"></div>
+        <div class="sk-grid">
+          <div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="sk-line" style="width: 45%;"></div>
+        <div class="sk-grid">
+          <div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="regions-container"></div>
+  </div>
+
+  <!-- Auth View -->
+  <div id="view-auth" class="app-shell hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <div class="brand-name">Yalla Run <span class="brand-tag">Admin</span></div>
+      </div>
+      <a href="#main" class="nav-btn">العودة للرئيسية</a>
+    </header>
+
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h2>تسجيل دخول الإدارة</h2>
+        <p>أدخل بيانات حسابك لإدارة المناطق والأسعار وسعر الصرف</p>
+      </div>
+
+      <div id="auth-msg" class="inline-msg error hidden"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="auth-email">البريد الإلكتروني</label>
+          <input type="email" id="auth-email" class="input-control" required dir="ltr" placeholder="admin@yallarun.com">
+        </div>
+        <div class="form-group">
+          <label for="auth-password">كلمة المرور</label>
+          <div class="password-wrap">
+            <input type="password" id="auth-password" class="input-control" required dir="ltr" placeholder="••••••••">
+            <button type="button" class="toggle-pw-btn" id="toggle-pw-btn" aria-label="إظهار أو إخفاء كلمة المرور">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="btn-login" style="margin-top: 8px;">دخول إلى لوحة التحكم</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard View -->
+  <div id="view-admin" class="app-shell hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <div class="brand-name">Yalla Run <span class="brand-tag">لوحة التحكم</span></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="#main" class="nav-btn">عرض الموقع</a>
+        <button type="button" id="btn-logout" class="nav-btn nav-btn-danger">تسجيل خروج</button>
+      </div>
+    </header>
+
+    <!-- KPI Stats -->
+    <section class="kpi-grid" aria-label="إحصائيات المنصة">
+      <div class="kpi-card">
+        <div class="kpi-label">إجمالي المناطق</div>
+        <div class="kpi-value accent" id="kpi-total-areas">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">الأقسام النشطة</div>
+        <div class="kpi-value" id="kpi-total-sections">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">سعر الصرف</div>
+        <div class="kpi-value" id="kpi-exchange-rate">89,500</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">تتوقف بعد 7م</div>
+        <div class="kpi-value" id="kpi-late-areas">0</div>
+      </div>
+    </section>
+
+    <!-- Exchange Rate & Bulk Price Cards -->
+    <section class="admin-tools-grid">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="admin-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <h3>إدارة سعر الصرف</h3>
+        </div>
+        <div class="flex-action-row">
+          <input type="number" id="exchange-rate-input" class="input-control" placeholder="سعر الصرف (مثال: 89500)" min="1">
+          <button type="button" class="btn btn-primary" id="btn-save-rate" onclick="saveExchangeRate()">حفظ السعر</button>
+        </div>
+        <div id="rate-msg" class="inline-msg hidden"></div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="admin-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
+          <h3>تعديل أسعار جميع المناطق</h3>
+        </div>
+        <div class="flex-action-row">
+          <input type="number" id="bulk-price-input" class="input-control" placeholder="المبلغ كاملاً (مثال: 50000 أو -50000)">
+          <button type="button" class="btn btn-primary" id="btn-bulk-price" onclick="updateAllPrices()">تطبيق على الكل</button>
+        </div>
+        <div id="bulk-price-msg" class="inline-msg hidden"></div>
+      </div>
+    </section>
+
+    <!-- Data Table Card -->
+    <section class="table-card">
+      <div class="table-toolbar">
+        <h2>إدارة المناطق والأسعار</h2>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openModal()" style="min-height: 42px; padding: 8px 18px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          إضافة منطقة
+        </button>
+      </div>
+
+      <div class="table-filters">
+        <input type="search" id="adminSearchInput" class="input-control" placeholder="تصفية حسب اسم المنطقة..." autocomplete="off">
+        <select id="adminSectionFilter" class="input-control">
+          <option value="all">كل الأقسام</option>
+          <option value="beirut">بيروت</option>
+          <option value="dahiye">الضاحية الجنوبية</option>
+          <option value="hazmieh">الحازمية - بعبدا</option>
+          <option value="metn">المتن</option>
+          <option value="sahel">ساحل المتن</option>
+          <option value="jabal">جبل لبنان</option>
+          <option value="khalde">خلدة</option>
+          <option value="hadath">حدث</option>
+          <option value="emb">السفارات</option>
+        </select>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th width="44"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" aria-label="تحديد الكل"></th>
+            <th>المنطقة</th>
+            <th>السعر</th>
+            <th>القسم</th>
+            <th width="150">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="admin-table-body"></tbody>
+      </table>
+    </section>
+
+    <!-- Bulk Action Bar -->
+    <div id="action-bar" class="action-bar hidden">
+      <span style="font-weight: 700; font-size: 14px;">تم تحديد <span id="selected-count">0</span> منطقة</span>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.12); color: #FFFFFF;" onclick="clearSelection()">إلغاء</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelected()">حذف المحدد</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Modal -->
+  <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal" style="max-width: 380px; text-align: center;">
+      <h2 id="confirm-title" style="font-family: var(--font-display); font-size: 19px; font-weight: 800; margin-bottom: 10px;">تأكيد الإجراء</h2>
+      <p id="confirm-msg" style="color: var(--muted); font-size: 14px; font-weight: 600; line-height: 1.6;"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="btn-confirm-cancel">إلغاء</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-ok">تأكيد</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Add/Edit -->
+  <div id="modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">إضافة منطقة جديدة</h2>
+        <button type="button" class="modal-close" onclick="closeModal()" aria-label="إغلاق">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="modal-msg" class="inline-msg error hidden"></div>
+
+      <form id="area-form">
+        <input type="hidden" id="area-id">
+        <div class="form-group">
+          <label for="area-name">اسم المنطقة</label>
+          <input type="text" id="area-name" class="input-control" required placeholder="مثال: الحمرا">
+        </div>
+        <div class="form-group">
+          <label for="area-price">السعر (ل.ل)</label>
+          <input type="number" id="area-price" class="input-control" required min="0" placeholder="مثال: 200000">
+          <div class="form-note">ملاحظة: أدخل السعر كاملاً. مثال: 200000 سيعرض 200,000 ل.ل</div>
+        </div>
+        <div class="form-group">
+          <label for="area-section">القسم / التبويب</label>
+          <select id="area-section" class="input-control" required>
+            <option value="beirut">بيروت</option>
+            <option value="dahiye">الضاحية الجنوبية</option>
+            <option value="hazmieh">الحازمية - بعبدا</option>
+            <option value="metn">المتن</option>
+            <option value="sahel">ساحل المتن</option>
+            <option value="jabal">جبل لبنان</option>
+            <option value="khalde">خلدة</option>
+            <option value="hadath">حدث</option>
+            <option value="emb">السفارات</option>
+          </select>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="area-late">
+          <span>إيقاف التوصيل بعد الساعة 7:00 مساءً</span>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-area">حفظ المنطقة</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // --- 0. CACHE VERSION ---
+    const CACHE_VERSION = 'v1.0.0';
+
+    // --- 1. Firebase Config & Init ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCw8V63mxR1y6Rly7s2FPJEYeCvWA8aEwE",
+      authDomain: "yallarun-9a1e5.firebaseapp.com",
+      databaseURL: "https://yallarun-9a1e5-default-rtdb.firebaseio.com/",
+      projectId: "yallarun-9a1e5",
+      storageBucket: "yallarun-9a1e5.firebasestorage.app",
+      messagingSenderId: "152704708221",
+      appId: "1:152704708221:web:78b5df97ddf2f81b340b14",
+      measurementId: "G-N3E8JKY49Y"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // Sections Definition
+    const SECTIONS = {
+      beirut: "بيروت",
+      dahiye: "الضاحية الجنوبية",
+      hazmieh: "الحازمية - بعبدا",
+      metn: "المتن",
+      sahel: "ساحل المتن",
+      jabal: "جبل لبنان",
+      khalde: "خلدة",
+      hadath: "حدث",
+      emb: "السفارات"
+    };
+
+    // State
+    let areasData = {};
+    let exchangeRate = 89500;
+    let isEditing = false;
+    let selectedIds = new Set();
+    let isNestedPath = false;
+    let activeCategory = 'all';
+    let isSubmittingArea = false;
+    let isUpdatingBulk = false;
+    let isSavingRate = false;
+
+    // --- Safe Storage Helpers ---
+    function safeGetStorage(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeSetStorage(key, val) {
+      try { localStorage.setItem(key, val); } catch (e) {}
+    }
+    function safeRemoveStorage(key) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+
+    // --- Security & Text Helpers ---
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function normalizeArabic(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[أإآ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .trim();
+    }
+
+    // --- Toast Helper ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.2s ease';
+        setTimeout(() => toast.remove(), 220);
+      }, 3200);
+    }
+
+    // Helper: Normalize Data Source Path
+    function getNormalizedSource() {
+      if (areasData && areasData.deliveryAreas) {
+        isNestedPath = true;
+        return areasData.deliveryAreas;
+      }
+      isNestedPath = false;
+      return areasData;
+    }
+
+    // --- 2. Format Price Helpers ---
+    function normalizeLiraValue(p) {
+      let val = Number(p);
+      if (isNaN(val)) return 0;
+      if (val < 10000 && val > 0) val = val * 1000;
+      return val;
+    }
+
+    function formatPrice(p) {
+      if (!p && p !== 0) return '0 ل.ل';
+      const val = normalizeLiraValue(p);
+      return val.toLocaleString('en-US') + ' ل.ل';
+    }
+
+    function formatUsdPrice(p) {
+      if (!p && p !== 0) return '';
+      if (!exchangeRate || exchangeRate <= 0) return '';
+      const lira = normalizeLiraValue(p);
+      const usd = lira / exchangeRate;
+      const formatted = (usd % 1 === 0) ? usd.toFixed(0) : usd.toFixed(2);
+      return '$' + formatted;
+    }
+
+    function updateRateDisplays() {
+      const headerRate = document.getElementById('header-rate-text');
+      if (headerRate) headerRate.textContent = `1$ = ${Number(exchangeRate).toLocaleString('en-US')} ل.ل`;
+      const kpiRate = document.getElementById('kpi-exchange-rate');
+      if (kpiRate) kpiRate.textContent = Number(exchangeRate).toLocaleString('en-US');
+    }
+
+    // --- 3. Instant Local Cache Init ---
+    function initLocalCache() {
+      const savedVer = safeGetStorage('yalla_cache_ver');
+      if (savedVer !== CACHE_VERSION) {
+        safeRemoveStorage('yalla_areas_cache');
+        safeRemoveStorage('yalla_rate_cache');
+        safeSetStorage('yalla_cache_ver', CACHE_VERSION);
+      } else {
+        const cachedRate = safeGetStorage('yalla_rate_cache');
+        if (cachedRate && Number(cachedRate) > 0) exchangeRate = Number(cachedRate);
+        updateRateDisplays();
+
+        const cachedAreas = safeGetStorage('yalla_areas_cache');
+        if (cachedAreas) {
+          try {
+            areasData = JSON.parse(cachedAreas);
+            renderCategoryNav();
+            renderMainView();
+            document.getElementById('loading-main').classList.add('hidden');
+          } catch (e) {}
+        }
+      }
+    }
+    initLocalCache();
+
+    // --- Online / Offline Detection ---
+    function updateOnlineStatus() {
+      const banner = document.getElementById('offline-banner');
+      if (!banner) return;
+      if (navigator.onLine) banner.classList.add('hidden');
+      else banner.classList.remove('hidden');
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // --- 4. View Router ---
+    function handleRoute() {
+      const hash = window.location.hash;
+      document.getElementById('view-main').classList.add('hidden');
+      document.getElementById('view-auth').classList.add('hidden');
+      document.getElementById('view-admin').classList.add('hidden');
+
+      if (hash === '#admin') {
+        if (auth.currentUser) {
+          document.getElementById('view-admin').classList.remove('hidden');
+          renderAdminDashboard();
+        } else {
+          document.getElementById('view-auth').classList.remove('hidden');
+        }
+      } else {
+        document.getElementById('view-main').classList.remove('hidden');
+      }
+    }
+    window.addEventListener('hashchange', handleRoute);
+
+    // --- 5. Main App Rendering ---
+    const regionsContainer = document.getElementById('regions-container');
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const catNav = document.getElementById('catNav');
+
+    function renderCategoryNav() {
+      let html = `<button type="button" class="cat-chip ${activeCategory === 'all' ? 'active' : ''}" data-sec="all" onclick="scrollToSection('all')">الكل</button>`;
+      Object.keys(SECTIONS).forEach(secKey => {
+        html += `<button type="button" class="cat-chip ${activeCategory === secKey ? 'active' : ''}" data-sec="${secKey}" onclick="scrollToSection('${secKey}')">${escapeHtml(SECTIONS[secKey])}</button>`;
+      });
+      catNav.innerHTML = html;
+    }
+
+    window.scrollToSection = function(secKey) {
+      activeCategory = secKey;
+      document.querySelectorAll('#catNav .cat-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-sec') === secKey);
+      });
+
+      if (secKey === 'all') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const el = document.getElementById(`sec-${secKey}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    window.clearMainSearch = function() {
+      searchInput.value = '';
+      clearSearchBtn.classList.add('hidden');
+      renderMainView();
+      searchInput.focus();
+    };
+
+    clearSearchBtn.addEventListener('click', window.clearMainSearch);
+
+    function renderMainView() {
+      regionsContainer.innerHTML = '';
+      const source = getNormalizedSource();
+      const rawQuery = searchInput.value.trim();
+      clearSearchBtn.classList.toggle('hidden', rawQuery.length === 0);
+
+      let totalAreasCount = 0;
+      if (source) {
+        for (let id in source) {
+          const item = source[id];
+          if (item && typeof item === 'object' && item.name) totalAreasCount++;
+        }
+      }
+      const heroStat = document.getElementById('hero-total-areas');
+      if (heroStat) {
+        heroStat.textContent = totalAreasCount > 0 ? `${totalAreasCount} منطقة مغطاة` : 'لا توجد مناطق';
+      }
+
+      if (!source || Object.keys(source).length === 0) {
+        regionsContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <h3>لا توجد بيانات متاحة حالياً</h3>
+            <p>سيتم عرض أسعار التوصيل فور إضافتها من لوحة الإدارة.</p>
+          </div>`;
+        return;
+      }
+
+      const grouped = {};
+      Object.keys(SECTIONS).forEach(sec => grouped[sec] = {});
+      const normFilter = normalizeArabic(rawQuery);
+      let matchedCount = 0;
+
+      for (let id in source) {
+        const item = source[id];
+        if (!item || typeof item !== 'object' || !item.name) continue;
+        if (normFilter && !normalizeArabic(item.name).includes(normFilter)) continue;
+
+        matchedCount++;
+        if (!grouped[item.section]) grouped[item.section] = {};
+        if (!grouped[item.section][item.price]) grouped[item.section][item.price] = [];
+        grouped[item.section][item.price].push(item);
+      }
+
+      if (matchedCount === 0) {
+        regionsContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+            <h3>لم نجد منطقة مطابقة لـ "${escapeHtml(rawQuery)}"</h3>
+            <p>تأكد من كتابة اسم المنطقة بشكل صحيح أو جرب البحث بكلمة أقصر.</p>
+            <button type="button" class="btn btn-primary btn-sm" onclick="clearMainSearch()">مسح البحث</button>
+          </div>`;
+        document.getElementById('loading-main').classList.add('hidden');
+        return;
+      }
+
+      let htmlBuffer = '';
+      Object.keys(grouped).forEach(secKey => {
+        const tiers = grouped[secKey];
+        const tierKeys = Object.keys(tiers);
+        if (tierKeys.length === 0) return;
+
+        let totalCount = 0;
+        tierKeys.forEach(p => totalCount += tiers[p].length);
+
+        const sortedPrices = tierKeys.sort((a, b) => normalizeLiraValue(a) - normalizeLiraValue(b));
+
+        let tiersHtml = '';
+        sortedPrices.forEach(price => {
+          const areasHtml = tiers[price].map(area => `
+            <div class="area-chip ${area.lateStop ? 'late-stop' : ''}">
+              <span>${escapeHtml(area.name)}</span>
+              ${area.lateStop ? `
+                <span class="late-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  يتوقف بعد 7:00 م
+                </span>` : ''}
+            </div>
+          `).join('');
+
+          const usdDisplay = formatUsdPrice(price);
+          tiersHtml += `
+            <div class="tier-row">
+              <div class="tier-header">
+                <div class="price-pair">
+                  <span class="price-lbp">${escapeHtml(formatPrice(price))}</span>
+                  ${usdDisplay ? `<span class="price-usd">${escapeHtml(usdDisplay)}</span>` : ''}
+                </div>
+                <span class="tier-count">${tiers[price].length} منطقة</span>
+              </div>
+              <div class="areas-grid">${areasHtml}</div>
+            </div>`;
+        });
+
+        htmlBuffer += `
+          <section class="section-card" id="sec-${escapeHtml(secKey)}">
+            <div class="section-header">
+              <div class="section-title-group">
+                <span class="section-accent" aria-hidden="true"></span>
+                <h2 class="section-title">${escapeHtml(SECTIONS[secKey] || secKey)}</h2>
+              </div>
+              <span class="count-badge">${totalCount} منطقة</span>
+            </div>
+            ${tiersHtml}
+          </section>`;
+      });
+
+      regionsContainer.innerHTML = htmlBuffer;
+      document.getElementById('loading-main').classList.add('hidden');
+    }
+
+    searchInput.addEventListener('input', renderMainView);
+
+    // --- 6. Firebase Data & Exchange Rate Listeners ---
+    db.ref('deliveryAreas').on('value', snap => {
+      if (snap.exists()) {
+        areasData = snap.val();
+        safeSetStorage('yalla_areas_cache', JSON.stringify(areasData));
+      } else {
+        areasData = {};
+      }
+      renderCategoryNav();
+      renderMainView();
+      document.getElementById('loading-main').classList.add('hidden');
+      if (window.location.hash === '#admin' && auth.currentUser) {
+        renderAdminDashboard();
+      }
+    }, err => {
+      document.getElementById('loading-main').classList.add('hidden');
+      showToast('تعذر الاتصال بقاعدة البيانات: ' + err.message, 'error');
+    });
+
+    db.ref('exchangeRate').on('value', snap => {
+      if (snap.exists()) {
+        exchangeRate = Number(snap.val()) || 89500;
+      } else {
+        exchangeRate = 89500;
+      }
+      safeSetStorage('yalla_rate_cache', String(exchangeRate));
+      updateRateDisplays();
+      const rateInput = document.getElementById('exchange-rate-input');
+      if (rateInput && document.activeElement !== rateInput) {
+        rateInput.value = exchangeRate;
+      }
+      renderMainView();
+      if (window.location.hash === '#admin' && auth.currentUser) {
+        renderAdminTable();
+      }
+    });
+
+    // --- 7. Admin Panel Functions ---
+    function customConfirm(message, onConfirm) {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-msg').textContent = message;
+      modal.classList.remove('hidden');
+
+      const btnOk = document.getElementById('btn-confirm-ok');
+      const btnCancel = document.getElementById('btn-confirm-cancel');
+
+      const newBtnOk = btnOk.cloneNode(true);
+      const newBtnCancel = btnCancel.cloneNode(true);
+      btnOk.parentNode.replaceChild(newBtnOk, btnOk);
+      btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+      newBtnCancel.addEventListener('click', () => modal.classList.add('hidden'));
+      newBtnOk.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        onConfirm();
+      });
+    }
+
+    function showInlineMsg(el, text, type) {
+      el.textContent = text;
+      el.className = `inline-msg ${type}`;
+      el.classList.remove('hidden');
+    }
+
+    window.saveExchangeRate = async function() {
+      if (isSavingRate) return;
+      const rateInput = document.getElementById('exchange-rate-input');
+      const btn = document.getElementById('btn-save-rate');
+      const msg = document.getElementById('rate-msg');
+      const rateVal = Number(rateInput.value);
+
+      if (!rateVal || rateVal <= 0) {
+        showInlineMsg(msg, 'الرجاء إدخال سعر صرف صحيح أكبر من صفر', 'error');
+        return;
+      }
+
+      isSavingRate = true;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span> جاري الحفظ...';
+
+      try {
+        await db.ref('exchangeRate').set(rateVal);
+        showInlineMsg(msg, 'تم تحديث سعر الصرف بنجاح', 'success');
+        showToast('تم تحديث سعر الصرف بنجاح', 'success');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+      } catch (err) {
+        showInlineMsg(msg, 'خطأ: ' + err.message, 'error');
+        showToast('فشل تحديث سعر الصرف', 'error');
+      } finally {
+        isSavingRate = false;
+        btn.disabled = false;
+        btn.textContent = 'حفظ السعر';
+      }
+    };
+
+    function updateAdminKPIs() {
+      const source = getNormalizedSource();
+      let total = 0;
+      let lateCount = 0;
+      const activeSecs = new Set();
+
+      if (source) {
+        for (let id in source) {
+          const item = source[id];
+          if (!item || typeof item !== 'object' || !item.name) continue;
+          total++;
+          if (item.lateStop) lateCount++;
+          if (item.section) activeSecs.add(item.section);
+        }
+      }
+
+      document.getElementById('kpi-total-areas').textContent = total;
+      document.getElementById('kpi-total-sections').textContent = activeSecs.size;
+      document.getElementById('kpi-late-areas').textContent = lateCount;
+      updateRateDisplays();
+    }
+
+    function renderAdminDashboard() {
+      updateAdminKPIs();
+      const rateInput = document.getElementById('exchange-rate-input');
+      if (rateInput && !rateInput.value) rateInput.value = exchangeRate;
+      renderAdminTable();
+    }
+
+    const adminSearchInput = document.getElementById('adminSearchInput');
+    const adminSectionFilter = document.getElementById('adminSectionFilter');
+
+    function renderAdminTable() {
+      const tbody = document.getElementById('admin-table-body');
+      tbody.innerHTML = '';
+      const source = getNormalizedSource();
+
+      const query = normalizeArabic(adminSearchInput ? adminSearchInput.value : '');
+      const secFilter = adminSectionFilter ? adminSectionFilter.value : 'all';
+      let rowsHtml = '';
+      let count = 0;
+
+      if (source) {
+        for (let id in source) {
+          const item = source[id];
+          if (!item || typeof item !== 'object' || !item.name) continue;
+          if (query && !normalizeArabic(item.name).includes(query)) continue;
+          if (secFilter !== 'all' && item.section !== secFilter) continue;
+
+          count++;
+          const safeId = escapeHtml(id);
+          const safeName = escapeHtml(item.name);
+          const secLabel = escapeHtml(SECTIONS[item.section] || item.section);
+          const usdStr = escapeHtml(formatUsdPrice(item.price));
+
+          rowsHtml += `
+            <tr>
+              <td class="col-check">
+                <input type="checkbox" class="row-check" value="${safeId}" onchange="updateSelection(this)" ${selectedIds.has(id) ? 'checked' : ''}>
+              </td>
+              <td class="col-name" style="font-weight:700;">
+                ${safeName}
+                ${item.lateStop ? '<span class="late-badge" style="margin-right:6px;">• يتوقف 7م</span>' : ''}
+              </td>
+              <td>
+                <div style="color:var(--primary); font-weight:800;">${escapeHtml(formatPrice(item.price))}</div>
+                ${usdStr ? `<div style="font-size:12px; color:var(--emerald); font-weight:700;">${usdStr}</div>` : ''}
+              </td>
+              <td><span class="section-pill">${secLabel}</span></td>
+              <td class="col-actions">
+                <div class="td-actions">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="editArea('${safeId}')">تعديل</button>
+                  <button type="button" class="btn btn-danger-soft btn-sm" onclick="deleteSingleArea('${safeId}')">حذف</button>
+                </div>
+              </td>
+            </tr>`;
+        }
+      }
+
+      if (count === 0) {
+        rowsHtml = `
+          <tr>
+            <td colspan="5" style="text-align:center; padding:36px 16px; color:var(--muted); font-weight:600;">
+              لا توجد مناطق مطابقة للعرض
+            </td>
+          </tr>`;
+      }
+
+      tbody.innerHTML = rowsHtml;
+      updateActionBar();
+    }
+
+    if (adminSearchInput) adminSearchInput.addEventListener('input', renderAdminTable);
+    if (adminSectionFilter) adminSectionFilter.addEventListener('change', renderAdminTable);
+
+    window.openModal = function() {
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('modal-msg').classList.add('hidden');
+      if (!isEditing) {
+        document.getElementById('modal-title').textContent = 'إضافة منطقة جديدة';
+        document.getElementById('area-form').reset();
+        document.getElementById('area-id').value = '';
+      } else {
+        document.getElementById('modal-title').textContent = 'تعديل المنطقة';
+      }
+    };
+
+    window.closeModal = function() {
+      document.getElementById('modal').classList.add('hidden');
+      isEditing = false;
+    };
+
+    document.getElementById('area-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (isSubmittingArea) return;
+
+      const btn = document.getElementById('btn-save-area');
+      const msg = document.getElementById('modal-msg');
+      const nameVal = document.getElementById('area-name').value.trim();
+      const priceVal = Number(document.getElementById('area-price').value);
+
+      if (!nameVal || isNaN(priceVal) || priceVal < 0) {
+        showInlineMsg(msg, 'الرجاء إدخال اسم منطقة وسعر صحيح', 'error');
+        return;
+      }
+
+      isSubmittingArea = true;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span> جاري الحفظ...';
+
+      getNormalizedSource();
+      const id = document.getElementById('area-id').value || db.ref().child('deliveryAreas').push().key;
+      const data = {
+        name: nameVal,
+        price: priceVal,
+        section: document.getElementById('area-section').value,
+        lateStop: document.getElementById('area-late').checked
+      };
+
+      const path = isNestedPath ? `deliveryAreas/deliveryAreas/${id}` : `deliveryAreas/${id}`;
+
+      try {
+        await db.ref(path).set(data);
+        closeModal();
+        showToast(isEditing ? 'تم تحديث المنطقة بنجاح' : 'تمت إضافة المنطقة بنجاح', 'success');
+      } catch (err) {
+        showInlineMsg(msg, 'خطأ: ' + err.message, 'error');
+      } finally {
+        isSubmittingArea = false;
+        btn.disabled = false;
+        btn.textContent = 'حفظ المنطقة';
+      }
+    });
+
+    window.editArea = function(id) {
+      const source = getNormalizedSource();
+      const item = source[id];
+      if (!item) return;
+
+      isEditing = true;
+      document.getElementById('area-id').value = id;
+      document.getElementById('area-name').value = item.name;
+      document.getElementById('area-price').value = normalizeLiraValue(item.price);
+      document.getElementById('area-section').value = item.section || 'beirut';
+      document.getElementById('area-late').checked = !!item.lateStop;
+      openModal();
+    };
+
+    window.deleteSingleArea = function(id) {
+      const source = getNormalizedSource();
+      const item = source[id];
+      if (!item) return;
+
+      customConfirm(`هل أنت متأكد من حذف منطقة "${item.name}"؟`, async () => {
+        const basePath = isNestedPath ? 'deliveryAreas/deliveryAreas/' : 'deliveryAreas/';
+        try {
+          await db.ref(`${basePath}${id}`).remove();
+          selectedIds.delete(id);
+          updateActionBar();
+          showToast('تم حذف المنطقة بنجاح', 'success');
+        } catch (err) {
+          showToast('فشل الحذف: ' + err.message, 'error');
+        }
+      });
+    };
+
+    window.toggleSelectAll = function(el) {
+      const checks = document.querySelectorAll('.row-check');
+      checks.forEach(c => {
+        c.checked = el.checked;
+        updateSelection(c, false);
+      });
+      updateActionBar();
+    };
+
+    window.updateSelection = function(el, updateBar = true) {
+      if (el.checked) selectedIds.add(el.value);
+      else selectedIds.delete(el.value);
+      if (updateBar) updateActionBar();
+    };
+
+    function updateActionBar() {
+      const bar = document.getElementById('action-bar');
+      const count = document.getElementById('selected-count');
+      count.textContent = selectedIds.size;
+      if (selectedIds.size > 0) bar.classList.remove('hidden');
+      else bar.classList.add('hidden');
+    }
+
+    window.clearSelection = function() {
+      selectedIds.clear();
+      const selectAll = document.getElementById('selectAll');
+      if (selectAll) selectAll.checked = false;
+      document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+      updateActionBar();
+    };
+
+    window.deleteSelected = function() {
+      if (selectedIds.size === 0) return;
+      customConfirm(`هل أنت متأكد من حذف ${selectedIds.size} منطقة محددة؟`, async () => {
+        getNormalizedSource();
+        const updates = {};
+        const basePath = isNestedPath ? 'deliveryAreas/deliveryAreas/' : 'deliveryAreas/';
+        selectedIds.forEach(id => {
+          updates[`${basePath}${id}`] = null;
+        });
+
+        try {
+          await db.ref().update(updates);
+          clearSelection();
+          showToast('تم حذف المناطق المحددة بنجاح', 'success');
+        } catch (err) {
+          showToast('فشل الحذف: غير مصرح لك أو حدث خطأ في الاتصال', 'error');
+        }
+      });
+    };
+
+    window.updateAllPrices = function() {
+      if (isUpdatingBulk) return;
+      const inputEl = document.getElementById('bulk-price-input');
+      const btn = document.getElementById('btn-bulk-price');
+      const msg = document.getElementById('bulk-price-msg');
+      const amount = Number(inputEl.value);
+
+      if (!amount || isNaN(amount) || amount === 0) {
+        showInlineMsg(msg, 'الرجاء إدخال مبلغ صحيح (موجب للزيادة أو سالب للنقصان)', 'error');
+        return;
+      }
+
+      customConfirm(`هل أنت متأكد من تعديل أسعار جميع المناطق بقيمة ${amount.toLocaleString('en-US')} ل.ل؟`, async () => {
+        const source = getNormalizedSource();
+        if (!source) return;
+
+        const updates = {};
+        const basePath = isNestedPath ? 'deliveryAreas/deliveryAreas/' : 'deliveryAreas/';
+
+        for (let id in source) {
+          const item = source[id];
+          if (!item || typeof item !== 'object' || item.price === undefined) continue;
+          const currentPrice = normalizeLiraValue(item.price);
+          let newPrice = currentPrice + amount;
+          if (newPrice < 0) newPrice = 0;
+          updates[`${basePath}${id}/price`] = newPrice;
+        }
+
+        isUpdatingBulk = true;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> جاري التعديل...';
+
+        try {
+          await db.ref().update(updates);
+          showInlineMsg(msg, 'تم تعديل أسعار جميع المناطق بنجاح', 'success');
+          showToast('تم تحديث أسعار جميع المناطق بنجاح', 'success');
+          inputEl.value = '';
+          setTimeout(() => msg.classList.add('hidden'), 3000);
+        } catch (err) {
+          showInlineMsg(msg, 'خطأ: ' + err.message, 'error');
+          showToast('فشل تعديل الأسعار', 'error');
+        } finally {
+          isUpdatingBulk = false;
+          btn.disabled = false;
+          btn.textContent = 'تطبيق على الكل';
+        }
+      });
+    };
+
+    // Close modals with Escape or Backdrop click
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.getElementById('confirm-modal').classList.add('hidden');
+      }
+    });
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
+    document.getElementById('confirm-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'confirm-modal') e.target.classList.add('hidden');
+    });
+
+    // --- 8. Authentication ---
+    function translateAuthError(err) {
+      const code = err && err.code ? err.code : '';
+      switch (code) {
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+        case 'auth/user-not-found':
+          return 'لا يوجد حساب مسجل بهذا البريد الإلكتروني.';
+        case 'auth/invalid-email':
+          return 'صيغة البريد الإلكتروني غير صحيحة.';
+        case 'auth/too-many-requests':
+          return 'تم حظر المحاولات مؤقتاً لكثرة المحاولات الخاطئة. حاول لاحقاً.';
+        case 'auth/network-request-failed':
+          return 'تعذر الاتصال بالخادم. تحقق من اتصال الإنترنت.';
+        default:
+          return 'تعذر تسجيل الدخول: ' + (err.message || 'خطأ غير معروف');
+      }
+    }
+
+    auth.onAuthStateChanged(user => {
+      handleRoute();
+      if (user && window.location.hash === '#admin') {
+        renderAdminDashboard();
+      }
+    });
+
+    const loginForm = document.getElementById('login-form');
+    const authMsg = document.getElementById('auth-msg');
+    const togglePwBtn = document.getElementById('toggle-pw-btn');
+    const authPwInput = document.getElementById('auth-password');
+
+    togglePwBtn.addEventListener('click', () => {
+      const isHidden = authPwInput.type === 'password';
+      authPwInput.type = isHidden ? 'text' : 'password';
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value.trim();
+      const pass = authPwInput.value;
+      const btn = document.getElementById('btn-login');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span> جاري التحقق...';
+      authMsg.classList.add('hidden');
+
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+        showToast('تم تسجيل الدخول بنجاح', 'success');
+      } catch (err) {
+        authMsg.textContent = translateAuthError(err);
+        authMsg.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'دخول إلى لوحة التحكم';
+      }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await auth.signOut();
+      showToast('تم تسجيل الخروج', 'info');
+    });
+
+    // --- 9. Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js?v1.1=' + CACHE_VERSION).catch(err => console.log('SW registration failed: ', err));
+      });
+    }
+
+    handleRoute();
+  </script>
+</body>
+</html>
